@@ -1,0 +1,177 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import collections as mc
+import pylab as pl
+
+def set_degrees(from_deg, to_deg, by_step, radians):
+    theta_degrees = np.linspace(from_deg,
+                                to_deg,
+                                by_step)
+    
+    if radians:
+        return np.deg2rad(theta_degrees)
+    else:
+        return theta_degrees
+    
+    return theta_degrees
+
+# #Create an array of theta values in degrees (e.g., for T  0 to 113*360 degrees)
+# theta_degrees = np.linspace(0, 213*360,10000)
+
+# #Convert degrees to radians
+# theta_radians = np.deg2rad(theta_degrees)
+
+# my_coeff = np.pi
+# my_coeff=np.e
+#my_coeff=np.sqrt(2)
+#my_coeff=13
+#my_coeff=1/999999
+
+#Calculate z(theta) using the formula, 1j is imaginary number
+# z = np.exp(theta_radians * 1j) + np.exp(my_coeff * theta_radians * 1j)
+
+# first_segment = np.exp(theta_radians * 1j)
+# second_segment = np.exp(my_coeff * theta_radians * 1j)
+
+
+def plot_segments(first_segment, second_segment, n_steps=100):
+    # create segments lists to plot
+    seg_list_1=[]
+    seg_list_2=[]
+    for i in range(n_steps):
+        seg_list_1.append([(0,0),(np.real(first_segment[i]),np.imag(first_segment[i]))])
+        seg_list_2.append([seg_list_1[i][1],(np.real(second_segment[i])+np.real(first_segment[i]),np.imag(second_segment[i])+np.imag(first_segment[i]))])
+
+    #plot
+    lc = mc.LineCollection(seg_list_1,
+                        linewidths=0.5)
+    lc2 = mc.LineCollection(seg_list_2)
+    fig, ax = pl.subplots()
+    ax.add_collection(lc)
+    ax.add_collection(lc2)
+    ax.autoscale()
+    ax.margins(0.1)
+    
+    # plt.show()
+
+
+def plot_final(z, title):
+    #separate the real and imaginary parts of z
+    x = np.real(z)
+    y = np.imag(z)
+
+    #Create a plot with specific settings
+    plt.figure(figsize=(10, 10)) # Set a square figure 10x10 inches
+    plt.plot(x, y, color='white', linewidth=0.5) # Set line color to white and line width to 0.5
+    plt.gca().set_facecolor('black') # Set background color to black
+    plt.gca().set_aspect('equal') # Equal aspect ratio
+    plt.grid(False) # Turn off the grids
+    plt.xlim(-2.5, 2.5) # X-axis limit
+    plt.ylim(-2.5, 2.5) # Y-axis limit
+    plt.title(title)
+    
+    # plt.show()
+
+def find_min_dist(z, my_coeff, by_step, rounds):
+
+    """
+    Ho capito che pi ha il suo minimo a 113 giri, quindi è più importante sapere il giro dove c'è il minimo, non lo step.
+    """
+    
+    diff = z[1:by_step]-z[0]
+    
+    min_abs_value = np.min(np.abs(diff))
+    res_step = np.argmin(np.abs(diff))
+    
+    print(f"coeff: {my_coeff} -> min dist is {min_abs_value} at step {res_step}")
+    
+    # Find the indices of all occurrences of the minimum absolute value
+    # sta roba è inutile perché i valori corrispondono sempre. Mi sa che ti dà il primo di default
+    # min_abs_indices = np.where(np.abs(diff) == min_abs_value)[0]
+
+    # Get the index of the first occurrence
+    # first_min_abs_index = min_abs_indices[0]
+    
+    # print(f"first found at step {first_min_abs_index}")
+    
+    
+    if res_step == 0:
+        print(f"No convergence found in {rounds} rounds")
+    elif res_step != 0:
+        print(f"Convergence found within {rounds} rounds, at step {res_step}")
+
+
+def mixed_coeff(pezzi_dict, theta_radians):
+    """
+    è una roba un po' inutile, finisci solo per sovrapporre più grafici uno all'altro
+    """
+    
+    z = []
+    start_end_index = 0
+    ii = 0
+    for i in range(len(pezzi_dict["n_steps"])):
+        #Calculate z(theta) using the formula, 1j is imaginary number
+        z.append( 
+                 np.exp(theta_radians[start_end_index : pezzi_dict['n_steps'][i]] * 1j) + \
+            np.exp(pezzi_dict["coeffs"][i] * theta_radians[start_end_index : pezzi_dict['n_steps'][i]] * 1j) 
+            )
+        
+        ii += 1 #serve per contare con quanti step iniziare
+        start_end_index = pezzi_dict['n_steps'][i]
+        
+    return np.concatenate(z).ravel()
+    
+
+    
+
+if __name__=='__main__':
+    by_step = 10000
+    rounds = 116
+    
+    theta_radians = set_degrees(from_deg = 0, 
+                                to_deg = rounds*360,
+                                by_step = by_step,
+                                radians = True)
+    
+    # set angle coefficient
+    # my_coeff = np.sqrt(2)
+    # numbers_sequence = [0, -3, 5, 2.75, -1/3, 1.61803398875, -np.sqrt(2), 10, -0.75, 7/4, np.pi, -np.e]
+    # numbers_sequence = [0, 0.1, 0.2, 0.5, 0.55, 0.555, 0.5555, 0.5555]
+    # numbers_sequence = [0]
+    numbers_sequence = [10, 0.3, 1/3, np.sqrt(2), np.pi, np.e]
+    
+    for my_coeff in numbers_sequence:
+    
+        #Calculate z(theta) using the formula, 1j is imaginary number
+        z = np.exp(theta_radians * 1j) + np.exp(my_coeff * theta_radians * 1j)
+        
+        # print(f"with coeff {my_coeff}")
+        find_min_dist(z, my_coeff, by_step, rounds)
+        print("")
+
+        # first_segment = np.exp(theta_radians * 1j)
+        # second_segment = np.exp(my_coeff * theta_radians * 1j)
+
+        
+        #plots
+        # plot_segments(first_segment, second_segment)
+        plot_final(z, title = str(my_coeff))
+    plt.show()
+    
+    """
+    pezzi_dict = {
+        "n_steps": [3000, 4000],
+        "coeffs": [1, 2]
+    }
+    
+    z = mixed_coeff(pezzi_dict, theta_radians)
+    plot_final(z, title = str("mixed"))
+    plt.show()
+    """
+
+
+"""
+Devo calcolare per ogni valore quanto ci mette a tornare al punto iniziale.
+In altre parole, dopo quanti giri la linea torna a sovrapporsi a se stessa?
+
+"""
